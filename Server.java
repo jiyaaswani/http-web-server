@@ -1,0 +1,103 @@
+import java.io.*;
+import java.net.*;
+import java.nio.file.Files;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+
+public class Server {
+    private final ExecutorService threadPool;
+
+    public Server(int poolSize){
+        this.threadPool = Executors.newFixedThreadPool(poolSize);
+    }
+
+    public void handleClient(Socket clientSocket){
+        try(BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            OutputStream out = clientSocket.getOutputStream();
+        ){
+            String requestLine = in.readLine();
+            System.out.println("Received " + requestLine);
+            String[] tokens = requestLine.split(" ");
+            String method = tokens[0];
+            String path = tokens[1];
+
+            if(path.equals("/")){
+                path = "/index.html";
+            }
+
+            File file = new File("public" + path);
+
+            if(file.exists() && !file.isDirectory){
+                byte[] content = Files.readAllBytes(file.toPath());
+
+                String contentType = guessContentType(file.getName());
+
+                PrintWriter pw = new PrintWriter(out);
+
+                pw.print("HTTP/1.1 200 OK\r\n");
+                pw.print("Content-Type: " + contentType + "\r\n");
+                pw.print("Content-Length: " + content.length + "\r\n");
+                pw.print("Connection: close\r\n");
+                pw.print("\r\n");
+                pw.flush();
+
+                out.write(content);
+                out.flush();
+            }
+            else{
+                String notFoundMessage = "<h1>404 Not Found</h1>";
+                PrintWriter pw = new PrintWriter(out);
+                pw.print("HTTP/1.1 404 Not Found\r\n");
+                pw.print("Content-Type: text/html\r\n");
+                pw.print("Content-Length: " + notFoundMessage.length() + "\r\n");
+                pw.print("Connection: close\r\n");
+                pw.print("\r\n");
+                pw.print(notFoundMessage);
+                pw.flush();
+            }
+
+            
+                
+        }catch(IOException ex){
+            ex.printStackTrace();
+        }
+    }
+
+    private String guessContentType(String filename){
+        if (filename.endsWith(".html")) return "text/html";
+        if (filename.endsWith(".css")) return "text/css";
+        if (filename.endsWith(".js")) return "application/javascript";
+        if (filename.endsWith(".png")) return "image/png";
+        if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "image/jpeg";
+        return "application/octet-stream";
+    }
+
+
+
+    public static void main(String[] args){
+    int port = 8010;
+    int poolSize = 10;
+    Server server = new Server(poolSize);
+
+    try{
+        ServerSocket serverSocket = new ServerSocket(port);
+        serverSocket.setSoTimeout(70000);
+        System.out.println("Server is listening on port " + port);
+
+        while(true){
+            Socket clientSocket = serverSocket.accept();
+
+            //use thread pool to handle client
+            server.threadPool.execute(() -> server.handleClient(clientSocket));
+        }
+    }catch(IOException ex){
+        ex.printStackTrace();
+    }finally{
+        //shutdown thread pool when server exits
+        server.threadPool.shutdown();
+    }
+}
+}
+
+
