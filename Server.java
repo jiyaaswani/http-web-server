@@ -16,83 +16,96 @@ public class Server {
         try(BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             OutputStream out = clientSocket.getOutputStream();
         ){
-            String requestLine = in.readLine();
-            System.out.println("Received " + requestLine);
+            try{
+                String requestLine = in.readLine();
+                System.out.println("Received " + requestLine);
 
-            Map<String,String> headers = new HashMap<>();
-            String line;
-            while(!(line = in.readLine()).isEmpty()){
-                String[] header = line.split(":", 2);
-                if(header.length == 2){
-                    headers.put(header[0].trim(), header[1].trim());
-                }
-            }
-
-            String[] tokens = requestLine.split(" ");
-            String method = tokens[0];
-            String path = tokens[1];
-
-            if(method.equals("POST")){
-                int contentLength = Integer.parseInt(headers.getOrDefault("Content-Length","0"));
-                char[] bodyChars = new char[contentLength];
-                in.read(bodyChars,0,contentLength);
-                String body = new String(bodyChars);
-
-                System.out.println("Received POST body: " + body);
-
-                String responseBody = "<h1>POST received</h1><p>" + body +"</p>";
-                PrintWriter pw = new PrintWriter(out);
-                pw.print("HTTP/1.1 200 OK\r\n");
-                pw.print("Content-Type: text/html\r\n");
-                pw.print("Content-Length: " + responseBody.length() + "\r\n");
-                pw.print("Connection: close\r\n");
-                pw.print("\r\n");
-                pw.print(responseBody);
-                pw.flush();
-
-                return;
-
-            }
-            else if(method.equals("GET")){
-                if(path.equals("/")){
-                path = "/index.html";
+                Map<String,String> headers = new HashMap<>();
+                String line;
+                while(!(line = in.readLine()).isEmpty()){
+                    String[] header = line.split(":", 2);
+                    if(header.length == 2){
+                        headers.put(header[0].trim(), header[1].trim());
+                    }
                 }
 
-                File file = new File("public" + path);
+                String[] tokens = requestLine.split(" ");
+                String method = tokens[0];
+                String path = tokens[1];
 
-                if(file.exists() && !file.isDirectory){
-                    byte[] content = Files.readAllBytes(file.toPath());
+                if(method.equals("POST")){
+                    int contentLength = Integer.parseInt(headers.getOrDefault("Content-Length","0"));
+                    char[] bodyChars = new char[contentLength];
+                    in.read(bodyChars,0,contentLength);
+                    String body = new String(bodyChars);
 
-                    String contentType = guessContentType(file.getName());
+                    System.out.println("Received POST body: " + body);
 
+                    String responseBody = "<h1>POST received</h1><p>" + body +"</p>";
                     PrintWriter pw = new PrintWriter(out);
-
                     pw.print("HTTP/1.1 200 OK\r\n");
-                    pw.print("Content-Type: " + contentType + "\r\n");
-                    pw.print("Content-Length: " + content.length + "\r\n");
-                    pw.print("Connection: close\r\n");
-                    pw.print("\r\n");
-                    pw.flush();
-
-                    out.write(content);
-                    out.flush();
-                }
-                else{
-                    String notFoundMessage = "<h1>404 Not Found</h1>";
-                    PrintWriter pw = new PrintWriter(out);
-                    pw.print("HTTP/1.1 404 Not Found\r\n");
                     pw.print("Content-Type: text/html\r\n");
-                    pw.print("Content-Length: " + notFoundMessage.length() + "\r\n");
+                    pw.print("Content-Length: " + responseBody.length() + "\r\n");
                     pw.print("Connection: close\r\n");
                     pw.print("\r\n");
-                    pw.print(notFoundMessage);
+                    pw.print(responseBody);
                     pw.flush();
-                }
 
-                return;
+                    return;
+
+                }
+                else if(method.equals("GET")){
+                    if(path.equals("/")){
+                    path = "/index.html";
+                    }
+
+                    File file = new File("public" + path);
+
+                    if(file.exists() && !file.isDirectory){
+                        byte[] content = Files.readAllBytes(file.toPath());
+
+                        String contentType = guessContentType(file.getName());
+
+                        PrintWriter pw = new PrintWriter(out);
+
+                        pw.print("HTTP/1.1 200 OK\r\n");
+                        pw.print("Content-Type: " + contentType + "\r\n");
+                        pw.print("Content-Length: " + content.length + "\r\n");
+                        pw.print("Connection: close\r\n");
+                        pw.print("\r\n");
+                        pw.flush();
+
+                        out.write(content);
+                        out.flush();
+                    }
+                    else{
+                        String notFoundMessage = "<h1>404 Not Found</h1>";
+                        PrintWriter pw = new PrintWriter(out);
+                        pw.print("HTTP/1.1 404 Not Found\r\n");
+                        pw.print("Content-Type: text/html\r\n");
+                        pw.print("Content-Length: " + notFoundMessage.length() + "\r\n");
+                        pw.print("Connection: close\r\n");
+                        pw.print("\r\n");
+                        pw.print(notFoundMessage);
+                        pw.flush();
+                    }
+
+                    return;
                     
             }
 
+            }catch(Exception e){
+                String errorMessage = "<h1>500 Internal Server Error</h1>";
+                PrintWriter pw = new PrintWriter(out);
+                pw.print("HTTP/1.1 500 Internal Server Error\r\n");
+                pw.print("Content-Type: text/html\r\n");
+                pw.print("Content-Length: " + errorMessage.length() + "\r\n");
+                pw.print("Connection: close\r\n");
+                pw.print("\r\n");
+                pw.print(errorMessage);
+                pw.flush();
+                e.printStackTrace();
+            }
             
                 
         }catch(IOException ex){
