@@ -3,6 +3,9 @@ import java.net.*;
 import java.nio.file.Files;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 
 
 public class Server {
@@ -32,6 +35,10 @@ public class Server {
                 String[] tokens = requestLine.split(" ");
                 String method = tokens[0];
                 String path = tokens[1];
+
+                System.out.println("[" + getTimestamp() + "] Request: " + method + " " + path);
+
+                System.out.println("Client: " + clientSocket.getInetAddress().getHostAddress());
 
                 if(method.equals("POST")){
                     int contentLength = Integer.parseInt(headers.getOrDefault("Content-Length","0"));
@@ -104,11 +111,13 @@ public class Server {
                 pw.print("\r\n");
                 pw.print(errorMessage);
                 pw.flush();
+                System.err.println("[" + getTimestamp() + "] ERROR while processing request:");
                 e.printStackTrace();
             }
             
                 
         }catch(IOException ex){
+            System.err.println("[" + getTimestamp() + "] IO ERROR in socket handling:");
             ex.printStackTrace();
         }
     }
@@ -122,7 +131,9 @@ public class Server {
         return "application/octet-stream";
     }
 
-
+    private String getTimestamp(){
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
 
     public static void main(String[] args){
     int port = 8010;
