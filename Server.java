@@ -49,45 +49,48 @@ public class Server {
                 pw.print("\r\n");
                 pw.print(responseBody);
                 pw.flush();
-                
+
+                return;
+
             }
             else if(method.equals("GET")){
-
-            }
-
-            if(path.equals("/")){
+                if(path.equals("/")){
                 path = "/index.html";
-            }
+                }
 
-            File file = new File("public" + path);
+                File file = new File("public" + path);
 
-            if(file.exists() && !file.isDirectory){
-                byte[] content = Files.readAllBytes(file.toPath());
+                if(file.exists() && !file.isDirectory){
+                    byte[] content = Files.readAllBytes(file.toPath());
 
-                String contentType = guessContentType(file.getName());
+                    String contentType = guessContentType(file.getName());
 
-                PrintWriter pw = new PrintWriter(out);
+                    PrintWriter pw = new PrintWriter(out);
 
-                pw.print("HTTP/1.1 200 OK\r\n");
-                pw.print("Content-Type: " + contentType + "\r\n");
-                pw.print("Content-Length: " + content.length + "\r\n");
-                pw.print("Connection: close\r\n");
-                pw.print("\r\n");
-                pw.flush();
+                    pw.print("HTTP/1.1 200 OK\r\n");
+                    pw.print("Content-Type: " + contentType + "\r\n");
+                    pw.print("Content-Length: " + content.length + "\r\n");
+                    pw.print("Connection: close\r\n");
+                    pw.print("\r\n");
+                    pw.flush();
 
-                out.write(content);
-                out.flush();
-            }
-            else{
-                String notFoundMessage = "<h1>404 Not Found</h1>";
-                PrintWriter pw = new PrintWriter(out);
-                pw.print("HTTP/1.1 404 Not Found\r\n");
-                pw.print("Content-Type: text/html\r\n");
-                pw.print("Content-Length: " + notFoundMessage.length() + "\r\n");
-                pw.print("Connection: close\r\n");
-                pw.print("\r\n");
-                pw.print(notFoundMessage);
-                pw.flush();
+                    out.write(content);
+                    out.flush();
+                }
+                else{
+                    String notFoundMessage = "<h1>404 Not Found</h1>";
+                    PrintWriter pw = new PrintWriter(out);
+                    pw.print("HTTP/1.1 404 Not Found\r\n");
+                    pw.print("Content-Type: text/html\r\n");
+                    pw.print("Content-Length: " + notFoundMessage.length() + "\r\n");
+                    pw.print("Connection: close\r\n");
+                    pw.print("\r\n");
+                    pw.print(notFoundMessage);
+                    pw.flush();
+                }
+
+                return;
+                    
             }
 
             
