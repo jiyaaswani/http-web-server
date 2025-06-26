@@ -18,9 +18,42 @@ public class Server {
         ){
             String requestLine = in.readLine();
             System.out.println("Received " + requestLine);
+
+            Map<String,String> headers = new HashMap<>();
+            String line;
+            while(!(line = in.readLine()).isEmpty()){
+                String[] header = line.split(":", 2);
+                if(header.length == 2){
+                    headers.put(header[0].trim(), header[1].trim());
+                }
+            }
+
             String[] tokens = requestLine.split(" ");
             String method = tokens[0];
             String path = tokens[1];
+
+            if(method.equals("POST")){
+                int contentLength = Integer.parseInt(headers.getOrDefault("Content-Length","0"));
+                char[] bodyChars = new char[contentLength];
+                in.read(bodyChars,0,contentLength);
+                String body = new String(bodyChars);
+
+                System.out.println("Received POST body: " + body);
+
+                String responseBody = "<h1>POST received</h1><p>" + body +"</p>";
+                PrintWriter pw = new PrintWriter(out);
+                pw.print("HTTP/1.1 200 OK\r\n");
+                pw.print("Content-Type: text/html\r\n");
+                pw.print("Content-Length: " + responseBody.length() + "\r\n");
+                pw.print("Connection: close\r\n");
+                pw.print("\r\n");
+                pw.print(responseBody);
+                pw.flush();
+                
+            }
+            else if(method.equals("GET")){
+
+            }
 
             if(path.equals("/")){
                 path = "/index.html";
