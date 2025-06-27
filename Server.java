@@ -5,7 +5,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
+import java.util.*;
 
 
 public class Server {
@@ -68,7 +68,7 @@ public class Server {
 
                     File file = new File("public" + path);
 
-                    if(file.exists() && !file.isDirectory){
+                    if(file.exists() && !file.isDirectory()){
                         byte[] content = Files.readAllBytes(file.toPath());
 
                         String contentType = guessContentType(file.getName());
